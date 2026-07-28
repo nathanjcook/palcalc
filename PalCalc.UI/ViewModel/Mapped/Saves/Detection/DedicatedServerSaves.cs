@@ -68,7 +68,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
             ]);
             res.AvailableSaves = new(availableSaves);
 
-            res.AddSaveCommand = new RelayCommand(() =>
+            res.AddSaveCommand = new AsyncRelayCommand(async () =>
             {
                 // 1) SSH connection string
                 var connWindow = new SimpleTextInputWindow()
@@ -80,14 +80,39 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
                 };
                 if (connWindow.ShowDialog() != true) return;
 
-                // 2) SSH private key file (key auth)
-                var ofd = new OpenFileDialog() { Title = "Select the SSH private key to connect with" };
-                if (ofd.ShowDialog(App.Current.MainWindow) != true) return;
+                // 2) auth: SSH key (recommended) or password
+                var useKey = AdonisMessageBox.Show(
+                    App.ActiveWindow,
+                    "Authenticate with an SSH key file?\n\nChoose No to use a password instead (stored in plaintext in settings).",
+                    "SSH Authentication",
+                    AdonisMessageBoxButton.YesNo
+                ) == AdonisMessageBoxResult.Yes;
+
+                string keyPath = null, password = null;
+                if (useKey)
+                {
+                    var ofd = new OpenFileDialog() { Title = "Select the SSH private key to connect with" };
+                    if (ofd.ShowDialog(App.Current.MainWindow) != true) return;
+                    keyPath = ofd.FileName;
+                }
+                else
+                {
+                    var pwWindow = new SimpleTextInputWindow()
+                    {
+                        Title = "SSH Password",
+                        InputLabel = "Password (stored in plaintext in settings)",
+                        Validator = s => s != null && s.Length > 0,
+                        Owner = App.ActiveWindow,
+                    };
+                    if (pwWindow.ShowDialog() != true) return;
+                    password = pwWindow.Result;
+                }
 
                 RemoteSaveConnection conn;
                 try
                 {
-                    conn = RemoteSaveConnection.Parse(connWindow.Result, ofd.FileName);
+                    conn = RemoteSaveConnection.Parse(connWindow.Result, keyPath);
+                    conn.Password = password;
                 }
                 catch (Exception ex)
                 {
@@ -104,7 +129,8 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
                 StandardSaveGame save;
                 try
                 {
-                    var dir = RemoteSaveFetcher.Fetch(conn);
+                    // async so the UI stays responsive while connecting / downloading
+                    var dir = await RemoteSaveFetcher.FetchAsync(conn);
                     save = new StandardSaveGame(dir);
                 }
                 catch (Exception ex)

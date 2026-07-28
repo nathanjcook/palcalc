@@ -2,6 +2,8 @@
 using Serilog;
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PalCalc.SaveReader
 {
@@ -14,32 +16,55 @@ namespace PalCalc.SaveReader
     {
         private static readonly ILogger logger = Log.ForContext(typeof(RemoteSaveFetcher));
 
+        private const int MaxAttempts = 3;
+        private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(500);
+
         // Top-level save files to mirror (WorldOption/LocalData may be absent on linux server saves).
         private static readonly string[] TopLevelFiles =
             ["Level.sav", "LevelMeta.sav", "LocalData.sav", "WorldOption.sav"];
 
-        private static SftpClient Connect(RemoteSaveConnection conn)
-        {
-            AuthenticationMethod auth = !string.IsNullOrEmpty(conn.PrivateKeyPath)
-                ? new PrivateKeyAuthenticationMethod(conn.Username, new PrivateKeyFile(conn.PrivateKeyPath))
-                : new PasswordAuthenticationMethod(conn.Username, conn.Password ?? "");
-
-            var info = new ConnectionInfo(conn.Host, conn.Port, conn.Username, auth)
-            {
-                // Fail fast so an unreachable server doesn't hang save detection.
-                Timeout = TimeSpan.FromSeconds(8),
-            };
-
-            var client = new SftpClient(info);
-            client.Connect();
-            return client;
-        }
-
         /// <summary>
-        /// Fetch the save files into <see cref="RemoteSaveConnection.LocalCacheDir"/> and return that path.
-        /// Throws on connection/auth failure (callers should catch and surface to the user).
+        /// Fetch the save into <see cref="RemoteSaveConnection.LocalCacheDir"/> and return that path.
+        /// Retries because the server rewrites Level.sav periodically — a mid-write pull can be
+        /// partial/invalid. Throws on connection/auth failure (callers should catch and surface).
         /// </summary>
         public static string Fetch(RemoteSaveConnection conn)
+        {
+            Exception lastError = null;
+
+            for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+            {
+                try
+                {
+                    var dir = FetchOnce(conn);
+
+                    // Guard against a partial Level.sav from a concurrent server save-write.
+                    using var check = new StandardSaveGame(dir);
+                    if (check.IsValid)
+                        return dir;
+
+                    logger.Warning("Remote save invalid after fetch (attempt {n}/{max})", attempt, MaxAttempts);
+                }
+                catch (Exception e)
+                {
+                    lastError = e;
+                    logger.Warning(e, "Remote fetch failed (attempt {n}/{max})", attempt, MaxAttempts);
+                }
+
+                if (attempt < MaxAttempts)
+                    Thread.Sleep(RetryDelay);
+            }
+
+            if (lastError != null)
+                throw lastError;
+
+            // Downloaded but never validated — return the dir; the caller's IsValid check surfaces it.
+            return conn.LocalCacheDir;
+        }
+
+        public static Task<string> FetchAsync(RemoteSaveConnection conn) => Task.Run(() => Fetch(conn));
+
+        private static string FetchOnce(RemoteSaveConnection conn)
         {
             var localDir = conn.LocalCacheDir;
             Directory.CreateDirectory(localDir);
@@ -72,10 +97,32 @@ namespace PalCalc.SaveReader
             return localDir;
         }
 
+        private static SftpClient Connect(RemoteSaveConnection conn)
+        {
+            AuthenticationMethod auth = !string.IsNullOrEmpty(conn.PrivateKeyPath)
+                ? new PrivateKeyAuthenticationMethod(conn.Username, new PrivateKeyFile(conn.PrivateKeyPath))
+                : new PasswordAuthenticationMethod(conn.Username, conn.Password ?? "");
+
+            var info = new ConnectionInfo(conn.Host, conn.Port, conn.Username, auth)
+            {
+                // Fail fast so an unreachable server doesn't hang save detection.
+                Timeout = TimeSpan.FromSeconds(8),
+            };
+
+            var client = new SftpClient(info);
+            client.Connect();
+            return client;
+        }
+
+        // Download to a temp file then atomically move into place, so a failed/partial download
+        // never corrupts the cached save. The move also trips StandardSaveGame's FileSystemWatcher,
+        // which drives the in-app "save changed — reload?" flow on re-fetch.
         private static void DownloadTo(SftpClient client, string remotePath, string localPath)
         {
-            using var fs = File.Create(localPath);
-            client.DownloadFile(remotePath, fs);
+            var tmp = localPath + ".tmp";
+            using (var fs = File.Create(tmp))
+                client.DownloadFile(remotePath, fs);
+            File.Move(tmp, localPath, overwrite: true);
         }
     }
 }
