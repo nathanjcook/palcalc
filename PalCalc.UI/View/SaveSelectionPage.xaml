@@ -43,11 +43,16 @@
             <materialIcons:MaterialIcon Kind="FileEdit" Foreground="LightSteelBlue" />
         </DataTemplate>
 
+        <DataTemplate x:Key="DedicatedServerIconTemplate">
+            <materialIcons:MaterialIcon Kind="Server" Foreground="MediumPurple" />
+        </DataTemplate>
+
         <msvm:SaveTypeTemplateSelector x:Key="IconTemplateSelector"
                                        SteamTemplate="{StaticResource SteamIconTemplate}"
                                        XboxTemplate="{StaticResource XboxIconTemplate}"
                                        ManualSaveTemplate="{StaticResource ManualSavesIconTemplate}"
                                        VirtualSaveTemplate="{StaticResource FakeSavesIconTemplate}"
+                                       DedicatedServerTemplate="{StaticResource DedicatedServerIconTemplate}"
                                        />
         
         <!-- LOCATION NOTICE TEMPLATES - NO SAVES -->
@@ -293,6 +298,12 @@
                                 CommandParameter="{Binding SelectedSave}"
                                 Visibility="{Binding SelectedCollection.RemoveSaveCommand, Converter={StaticResource VVC}, FallbackValue=Collapsed}"
                                 Content="{itl:LocalizedText LC_SAVE_GAME_REMOVE_BTN_LABEL}" />
+
+                        <Button Command="{Binding SelectedSave.RefreshCommand}"
+                                Visibility="{Binding SelectedSave.RefreshCommand, Converter={StaticResource VVC}, FallbackValue=Collapsed}"
+                                ToolTipService.ToolTip="Re-pull the save from the server">
+                            <materialIcons:MaterialIcon Kind="Refresh" Foreground="SkyBlue" Width="18" />
+                        </Button>
 
                         <Button Command="{Binding SelectedSave.OpenFolderCommand}"
                                 Visibility="{Binding SelectedSave.OpenFolderCommand, Converter={StaticResource VVC}, FallbackValue=Collapsed}"

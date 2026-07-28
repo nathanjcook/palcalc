@@ -19,19 +19,19 @@
         <Style TargetType="Window" BasedOn="{StaticResource {x:Type Window}}" />
     </Window.Style>
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding InputLabel}" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Center"/>
-        <TextBox x:Name="m_TextBox" PreviewKeyDown="m_TextBox_PreviewKeyDown" Margin="10,0,10,0" TextWrapping="Wrap" VerticalAlignment="Center" Grid.Column="1" Text="{Binding Result, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <!-- label sits above the input and wraps, so a long label doesn't squeeze the input box -->
+        <TextBlock Grid.Row="0" Text="{Binding InputLabel}" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="10,10,10,4" VerticalAlignment="Center"/>
+        <TextBox x:Name="m_TextBox" Grid.Row="1" PreviewKeyDown="m_TextBox_PreviewKeyDown" Margin="10,0,10,0" TextWrapping="Wrap" VerticalAlignment="Center" Text="{Binding Result, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <!-- shown instead of m_TextBox when IsMasked; PasswordBox.Password can't be bound, so Result is updated from PasswordChanged -->
+        <PasswordBox x:Name="m_PasswordBox" Grid.Row="1" PreviewKeyDown="m_TextBox_PreviewKeyDown" PasswordChanged="m_PasswordBox_PasswordChanged" Margin="10,0,10,0" VerticalAlignment="Center" Visibility="Collapsed" />
 
-        <StackPanel Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal" vu:StackPanelExtensions.Spacing="6" Margin="5,1,11,8">
+        <StackPanel Grid.Row="2" HorizontalAlignment="Right" Orientation="Horizontal" vu:StackPanelExtensions.Spacing="6" Margin="5,8,11,8">
             <Button Content="{itl:LocalizedText Code=LC_COMMON_SAVE}" Command="{Binding SaveCommand}" />
             <Button Content="{itl:LocalizedText Code=LC_COMMON_CANCEL}" Command="{Binding CancelCommand}" />
         </StackPanel>

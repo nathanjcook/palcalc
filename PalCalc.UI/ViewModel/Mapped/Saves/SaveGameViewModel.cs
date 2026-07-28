@@ -188,6 +188,10 @@ namespace PalCalc.UI.ViewModel.SaveSelection
 
         public IRelayCommand OpenFolderCommand { get; set; }
 
+        // Set only for remote (dedicated-server) saves: re-pull the save from the server. The
+        // download trips StandardSaveGame's FileSystemWatcher, driving the normal reload flow.
+        public IRelayCommand RefreshCommand { get; set; }
+
         public IRelayCommand ReloadSaveCommand { get; }
     }
 }

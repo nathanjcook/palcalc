@@ -32,6 +32,8 @@
 		</PackageReference>
 		<PackageReference Include="Serilog" Version="3.1.1" />
 		<PackageReference Include="SharpZipLib" Version="1.4.2" />
+		<!-- SFTP transport for remote dedicated-server saves (bump version if restore complains) -->
+		<PackageReference Include="SSH.NET" Version="2024.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>

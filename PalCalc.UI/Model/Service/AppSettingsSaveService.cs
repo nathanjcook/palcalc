@@ -28,6 +28,18 @@ namespace PalCalc.UI.Model.Service
             Storage.SaveAppSettings(settings);
         }
 
+        public void AddRemoteSave(RemoteSaveConnection remoteSave)
+        {
+            settings.RemoteSaveLocations.Add(remoteSave);
+            Storage.SaveAppSettings(settings);
+        }
+
+        public void RemoveRemoteSave(RemoteSaveConnection remoteSave)
+        {
+            settings.RemoteSaveLocations.RemoveAll(c => c.Id == remoteSave.Id);
+            Storage.SaveAppSettings(settings);
+        }
+
         public void RemoveManualSave(StandardSaveGame manualSave)
         {
             SaveInspectorWindowManager.CloseAll(manualSave);
