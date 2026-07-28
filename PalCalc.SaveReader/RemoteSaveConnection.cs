@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -19,17 +20,22 @@ namespace PalCalc.SaveReader
         // Key auth is preferred (many hardened dedicated servers disable password auth for root).
         public string PrivateKeyPath { get; set; }
 
-        // Optional password auth (used only when PrivateKeyPath is empty). Stored in plaintext in
-        // settings, so key auth is recommended.
+        // Optional password auth (used only when PrivateKeyPath is empty). Deliberately NOT
+        // persisted - it's kept for the current session only, so it never lands on disk. A
+        // password-auth save is restored from its local cache on startup and re-prompts when
+        // refreshed. Key auth is still the recommended path.
+        [IgnoreDataMember]
         public string Password { get; set; }
 
         // Remote directory containing Level.sav (e.g. .../Pal/Saved/SaveGames/0/<world-id>)
         public string RemoteSavePath { get; set; }
 
-        // Stable identity for dedup / lookup.
+        // Stable identity for dedup / lookup. Computed - not persisted.
+        [IgnoreDataMember]
         public string Id => $"{Username}@{Host}:{Port}{RemoteSavePath}";
 
-        // Deterministic local mirror directory for this connection.
+        // Deterministic local mirror directory for this connection. Computed - not persisted.
+        [IgnoreDataMember]
         public string LocalCacheDir
         {
             get

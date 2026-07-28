@@ -43,11 +43,16 @@
             <materialIcons:MaterialIcon Kind="FileEdit" Foreground="LightSteelBlue" />
         </DataTemplate>
 
+        <DataTemplate x:Key="DedicatedServerIconTemplate">
+            <materialIcons:MaterialIcon Kind="Server" Foreground="MediumPurple" />
+        </DataTemplate>
+
         <msvm:SaveTypeTemplateSelector x:Key="IconTemplateSelector"
                                        SteamTemplate="{StaticResource SteamIconTemplate}"
                                        XboxTemplate="{StaticResource XboxIconTemplate}"
                                        ManualSaveTemplate="{StaticResource ManualSavesIconTemplate}"
                                        VirtualSaveTemplate="{StaticResource FakeSavesIconTemplate}"
+                                       DedicatedServerTemplate="{StaticResource DedicatedServerIconTemplate}"
                                        />
         
         <!-- LOCATION NOTICE TEMPLATES - NO SAVES -->

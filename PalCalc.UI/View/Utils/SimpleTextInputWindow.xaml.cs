@@ -74,6 +74,18 @@ namespace PalCalc.UI.View.Utils
         [ObservableProperty]
         private string inputLabel = "Test Label";
 
+        // Masks the input (e.g. for passwords). Swaps the TextBox for the PasswordBox.
+        [ObservableProperty]
+        private bool isMasked;
+
+        partial void OnIsMaskedChanged(bool value)
+        {
+            m_TextBox.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            m_PasswordBox.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+
+            if (value) m_PasswordBox.Focus();
+        }
+
         public IRelayCommand SaveCommand { get; }
         public IRelayCommand CancelCommand { get; }
 
@@ -88,6 +100,11 @@ namespace PalCalc.UI.View.Utils
             {
                 base.OnPreviewKeyDown(e);
             }
+        }
+
+        private void m_PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            Result = m_PasswordBox.Password;
         }
 
         private void m_TextBox_PreviewKeyDown(object sender, KeyEventArgs e)

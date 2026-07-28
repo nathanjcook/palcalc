@@ -16,6 +16,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves
         public DataTemplate XboxTemplate { get; set; }
         public DataTemplate ManualSaveTemplate { get; set; }
         public DataTemplate VirtualSaveTemplate { get; set; }
+        public DataTemplate DedicatedServerTemplate { get; set; }
 
         public DataTemplate DefaultTemplate { get; set; }
 
@@ -31,6 +32,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves
                 SaveType.Steam => SteamTemplate,
                 SaveType.Xbox => XboxTemplate,
                 SaveType.LocalFile => ManualSaveTemplate,
+                SaveType.DedicatedServer => DedicatedServerTemplate,
                 SaveType.Virtual => VirtualSaveTemplate,
                 _ => DefaultTemplate
             } ?? DefaultTemplate;

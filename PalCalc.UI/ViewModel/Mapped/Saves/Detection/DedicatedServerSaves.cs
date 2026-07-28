@@ -10,6 +10,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 
 using AdonisMessageBox = AdonisUI.Controls.MessageBox;
@@ -25,6 +26,28 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
     {
         private static readonly ILogger logger = Log.ForContext(typeof(DedicatedServerSaves));
 
+        // Password auth with no password in memory - it's session-only and never persisted.
+        private static bool NeedsPassword(RemoteSaveConnection conn) =>
+            string.IsNullOrEmpty(conn.PrivateKeyPath) && string.IsNullOrEmpty(conn.Password);
+
+        // Returns false if the user cancelled.
+        private static bool PromptForPassword(RemoteSaveConnection conn)
+        {
+            var pwWindow = new SimpleTextInputWindow()
+            {
+                Title = "SSH Password",
+                InputLabel = $"Password for {conn.Username}@{conn.Host} (kept for this session only)",
+                Validator = s => s != null && s.Length > 0,
+                IsMasked = true,
+                Owner = App.ActiveWindow,
+            };
+
+            if (pwWindow.ShowDialog() != true) return false;
+
+            conn.Password = pwWindow.Result;
+            return true;
+        }
+
         public static SavesCollectionViewModel CollectAll(AppSettings settings, ISavesService savesService)
         {
             var loaded = new List<(RemoteSaveConnection conn, StandardSaveGame save)>();
@@ -32,7 +55,24 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
             {
                 try
                 {
-                    var dir = RemoteSaveFetcher.Fetch(conn);
+                    string dir;
+                    if (NeedsPassword(conn))
+                    {
+                        // Passwords aren't persisted, so this connection can't be fetched unattended.
+                        // Fall back to last session's download so the save still appears; refreshing
+                        // it re-prompts for the password.
+                        if (!Directory.Exists(conn.LocalCacheDir))
+                        {
+                            logger.Information("Skipping remote save {user}@{host}: password auth, nothing cached yet", conn.Username, conn.Host);
+                            continue;
+                        }
+                        dir = conn.LocalCacheDir;
+                    }
+                    else
+                    {
+                        dir = RemoteSaveFetcher.Fetch(conn);
+                    }
+
                     loaded.Add((conn, new StandardSaveGame(dir)));
                 }
                 catch (Exception e)
@@ -55,6 +95,9 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
             // FileSystemWatcher, which surfaces the normal "save changed — reload?" flow.
             res.RefreshCommand = new AsyncRelayCommand(async () =>
             {
+                // session-only password: needs re-entering after a restart
+                if (NeedsPassword(conn) && !PromptForPassword(conn)) return;
+
                 try
                 {
                     await RemoteSaveFetcher.FetchAsync(conn);
@@ -73,7 +116,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
             var res = new SavesCollectionViewModel()
             {
                 SaveType = SaveType.DedicatedServer,
-                TypeLabel = new HardCodedText("Dedicated Server"),
+                TypeLabel = new HardCodedText("Hosted Server"),
                 Title = null,
                 OpenFolderCommand = null,
             };
@@ -88,9 +131,11 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
                 // 1) SSH connection string
                 var connWindow = new SimpleTextInputWindow()
                 {
-                    Title = "Add Dedicated Server Save",
+                    Title = "Add Hosted Server Save",
                     InputLabel = "SSH connection: user@host[:port]:/path/to/SaveGames/0/<world-id>",
                     Validator = s => s != null && s.Contains(":/"),
+                    // connection strings are long; the shared default (300) is sized for short values
+                    Width = 520,
                     Owner = App.ActiveWindow,
                 };
                 if (connWindow.ShowDialog() != true) return;
@@ -98,7 +143,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
                 // 2) auth: SSH key (recommended) or password
                 var useKey = AdonisMessageBox.Show(
                     App.ActiveWindow,
-                    "Authenticate with an SSH key file?\n\nChoose No to use a password instead (stored in plaintext in settings).",
+                    "Authenticate with an SSH key file?\n\nChoose No to use a password instead (kept for this session only, so it must be re-entered after a restart).",
                     "SSH Authentication",
                     AdonisMessageBoxButton.YesNo
                 ) == AdonisMessageBoxResult.Yes;
@@ -115,8 +160,9 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
                     var pwWindow = new SimpleTextInputWindow()
                     {
                         Title = "SSH Password",
-                        InputLabel = "Password (stored in plaintext in settings)",
+                        InputLabel = "Password (kept for this session only, never saved to disk)",
                         Validator = s => s != null && s.Length > 0,
+                        IsMasked = true,
                         Owner = App.ActiveWindow,
                     };
                     if (pwWindow.ShowDialog() != true) return;
