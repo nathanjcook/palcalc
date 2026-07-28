@@ -38,12 +38,19 @@ namespace PalCalc.Solver.Probabilities
         /// Should be used repeatedly to calculate probabilities for all possible counts of passive skills (max 4)
         /// </remarks>
         /// 
-        public static float ProbabilityInheritedTargetPassives(List<PassiveSkill> parentPassives, List<PassiveSkill> desiredParentPassives, int numFinalPassives)
+        public static float ProbabilityInheritedTargetPassives(List<PassiveSkill> parentPassives, List<PassiveSkill> desiredParentPassives, int numFinalPassives, int? passiveInheritCountOverride = null)
         {
 #if DEBUG && DEBUG_CHECKS
             if (parentPassives.Count != parentPassives.Distinct().Count()) Debugger.Break();
             if (desiredParentPassives.Count != desiredParentPassives.Distinct().Count()) Debugger.Break();
 #endif
+
+            // A breeding cake with PassiveInheritCountOverride forces a fixed number of passives to be
+            // inherited directly from the parents (e.g. legendary cake = 4), replacing the usual
+            // weighted 1..4 direct-inheritance distribution.
+            float DirectProb(int n) => passiveInheritCountOverride.HasValue
+                ? (n == passiveInheritCountOverride.Value ? 1.0f : 0.0f)
+                : GameConstants.PassiveProbabilityDirect[n];
 
             // we know we need at least `desiredParentPassives.Count` to be inherited from the parents, but the overall number
             // of passives must be `numFinalPassives`. consider N, N+1, ..., passives inherited from parents, and an inverse amount
@@ -86,12 +93,12 @@ namespace PalCalc.Solver.Probabilities
                 if (desiredParentPassives.Count == 0)
                 {
                     // just the chance of getting this number of passives from parents
-                    probabilityGotRequiredFromParent = GameConstants.PassiveProbabilityDirect[numInheritedFromParent];
+                    probabilityGotRequiredFromParent = DirectProb(numInheritedFromParent);
                 }
                 else if (numIrrelevantFromParent == 0)
                 {
                     // chance of getting exactly the required passives
-                    probabilityGotRequiredFromParent = GameConstants.PassiveProbabilityDirect[numInheritedFromParent] / Choose(parentPassives.Count, desiredParentPassives.Count);
+                    probabilityGotRequiredFromParent = DirectProb(numInheritedFromParent) / Choose(parentPassives.Count, desiredParentPassives.Count);
                 }
                 else
                 {
@@ -115,7 +122,7 @@ namespace PalCalc.Solver.Probabilities
                     var probabilityCombinationWithDesiredPassives =
                         numCombinationsWithIrrelevantPassive / numCombinationsWithAnyPassives;
 
-                    probabilityGotRequiredFromParent = probabilityCombinationWithDesiredPassives * GameConstants.PassiveProbabilityDirect[numInheritedFromParent];
+                    probabilityGotRequiredFromParent = probabilityCombinationWithDesiredPassives * DirectProb(numInheritedFromParent);
                 }
 
 #if DEBUG && DEBUG_CHECKS

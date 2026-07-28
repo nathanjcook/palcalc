@@ -70,5 +70,9 @@ namespace PalCalc.Solver
         public int MaxSurgeryCost => maxSurgeryCost;
         public List<PassiveSkill> SurgeryPassives => allowedSurgeryPassives ?? [];
         public bool UseGenderReversers => useGenderReversers;
+
+        // Optional selected breeding cake (issue #208). Settable (not a ctor param) so existing
+        // callers are unaffected; null = no cake selected.
+        public CakeEffect SelectedCake { get; set; } = null;
     }
 }
