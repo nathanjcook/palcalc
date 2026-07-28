@@ -1,4 +1,5 @@
 ﻿using PalCalc.Model;
+using PalCalc.SaveReader;
 using PalCalc.UI.Localization;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,6 +65,9 @@ namespace PalCalc.UI.Model
         public static AppSettings Current = null;
 
         public List<string> ExtraSaveLocations { get; set; } = [];
+
+        // Remote dedicated-server saves fetched over SFTP (see PalCalc.SaveReader.RemoteSaveConnection).
+        public List<RemoteSaveConnection> RemoteSaveLocations { get; set; } = [];
 
         public List<string> FakeSaveNames { get; set; } = [];
 

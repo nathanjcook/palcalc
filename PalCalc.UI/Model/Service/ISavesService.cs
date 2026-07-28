@@ -13,8 +13,12 @@ namespace PalCalc.UI.Model.Service
 
         void AddManualSave(StandardSaveGame manualSave);
 
+        void AddRemoteSave(RemoteSaveConnection remoteSave);
+
         void RemoveVirtualSave(VirtualSaveGame virtualSave);
 
         void RemoveManualSave(StandardSaveGame manualSave);
+
+        void RemoveRemoteSave(RemoteSaveConnection remoteSave);
     }
 }

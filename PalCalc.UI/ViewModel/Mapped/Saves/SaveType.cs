@@ -11,6 +11,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves
         Steam,
         Xbox,
         LocalFile,
+        DedicatedServer,
         Virtual,
     }
 }

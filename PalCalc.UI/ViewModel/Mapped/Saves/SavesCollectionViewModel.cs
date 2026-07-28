@@ -40,10 +40,11 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves
 
 
             var manualSaves = ManualSaves.CollectAll(settings, savesService);
+            var remoteSaves = DedicatedServerSaves.CollectAll(settings, savesService);
             var fakeSaves = VirtualSaves.CollectAll(settings, savesService);
 
             return [
-                ..steamCollections, ..xboxCollections, manualSaves, fakeSaves
+                ..steamCollections, ..xboxCollections, manualSaves, remoteSaves, fakeSaves
             ];
         }
     }
