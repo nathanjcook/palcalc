@@ -41,11 +41,20 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves
 
             var manualSaves = ManualSaves.CollectAll(settings, savesService);
             var remoteSaves = DedicatedServerSaves.CollectAll(settings, savesService);
+            var dockerSaves = LocalDockerSaves.CollectAll(settings, savesService);
             var fakeSaves = VirtualSaves.CollectAll(settings, savesService);
 
-            return [
-                ..steamCollections, ..xboxCollections, manualSaves, remoteSaves, fakeSaves
-            ];
+            var collections = new List<SavesCollectionViewModel>();
+            collections.AddRange(steamCollections);
+            collections.AddRange(xboxCollections);
+            collections.Add(manualSaves);
+            collections.Add(remoteSaves);
+            // Local Docker is pure auto-detect — only show the group when a save was actually found,
+            // so non-Docker users don't see an empty section.
+            if (dockerSaves.AvailableSaves.Count > 0) collections.Add(dockerSaves);
+            collections.Add(fakeSaves);
+
+            return collections;
         }
     }
 }

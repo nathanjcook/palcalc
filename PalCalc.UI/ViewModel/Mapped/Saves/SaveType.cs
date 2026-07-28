@@ -12,6 +12,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves
         Xbox,
         LocalFile,
         DedicatedServer,
+        LocalDocker,
         Virtual,
     }
 }
