@@ -455,7 +455,8 @@ namespace PalCalc.Solver
                                 newPassives,
                                 probabilityForUpToNumPassives,
                                 finalIVs,
-                                ivsProbability
+                                ivsProbability,
+                                settings.SelectedCake?.EffectiveBreedCount ?? 1
                             );
 
                             var workingOptimalResults = state.WorkingOptimalTimesByPalId[res.Pal.Id];

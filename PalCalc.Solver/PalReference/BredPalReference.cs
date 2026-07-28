@@ -12,6 +12,7 @@ namespace PalCalc.Solver.PalReference
     public class BredPalReference : IPalReference
     {
         private GameSettings gameSettings;
+        private int breedCount = 1; // eggs per breeding action (breeding cake, issue #208)
 
         private BredPalReference(
             GameSettings gameSettings,
@@ -68,9 +69,11 @@ namespace PalCalc.Solver.PalReference
             List<PassiveSkill> passives,
             float passivesProbability,
             IV_Set ivs,
-            float ivsProbability
+            float ivsProbability,
+            int breedCount = 1
         ) : this(gameSettings, pal, parent1, parent2, passives, ivs)
         {
+            this.breedCount = breedCount;
             Gender = PalGender.WILDCARD;
             if (passivesProbability <= 0 || ivsProbability <= 0)
             {
@@ -110,33 +113,36 @@ namespace PalCalc.Solver.PalReference
                 _avgRequiredBreedings = value;
 
                 var timePerBreed = gameSettings.AvgBreedingTime * Parent1.TimeFactor * Parent2.TimeFactor;
-                var totalBreedingTime = _avgRequiredBreedings * timePerBreed;
-
                 var incubationTime = Pal.EggSize.IncubationTime(gameSettings);
-                var totalIncubationTime = _avgRequiredBreedings * incubationTime;
 
-                if (gameSettings.MultipleIncubators)
-                {
-                    // time to get the desired pal is just time to produce the egg + time to incubate it
-                    SelfBreedingEffort = totalBreedingTime + incubationTime;
-                }
-                else
-                {
-                    // either breeding time will outweigh incubation time, or vice-versa. regardless of which part
-                    // is the bottleneck, we'll always need to do the other part at least once.
-                    //
-                    // (though, realistically, incubation will always take longer than breeding, unless incubation
-                    // time is turned off entirely)
-
-                    var allIncubationWithBreeding = totalIncubationTime + timePerBreed;
-                    var allBreedingWithIncubation = totalBreedingTime + incubationTime;
-
-                    if (allIncubationWithBreeding > allBreedingWithIncubation)
-                        SelfBreedingEffort = allIncubationWithBreeding;
-                    else
-                        SelfBreedingEffort = allBreedingWithIncubation;
-                }
+                SelfBreedingEffort = ComputeSelfBreedingEffort(
+                    _avgRequiredBreedings, breedCount, timePerBreed, incubationTime, gameSettings.MultipleIncubators);
             }
+        }
+
+        // Effort (time) to breed + hatch `avgRequiredBreedings` eggs. A breeding cake's BreedCount
+        // (eggs per breeding action) reduces the number of breeding *actions* needed to produce the
+        // eggs, but every egg is still incubated. Pure/static for testability.
+        public static TimeSpan ComputeSelfBreedingEffort(
+            int avgRequiredBreedings, int breedCount, TimeSpan timePerBreed, TimeSpan incubationTime, bool multipleIncubators)
+        {
+            var numBreedActions = (int)Math.Ceiling(avgRequiredBreedings / (double)Math.Max(1, breedCount));
+            var totalBreedingTime = numBreedActions * timePerBreed;
+            var totalIncubationTime = avgRequiredBreedings * incubationTime;
+
+            if (multipleIncubators)
+            {
+                // produce all the eggs, then incubate them in parallel (a single incubation duration)
+                return totalBreedingTime + incubationTime;
+            }
+
+            // single incubator: whichever of breeding/incubation is the bottleneck dominates, plus one
+            // pass of the other
+            var allIncubationWithBreeding = totalIncubationTime + timePerBreed;
+            var allBreedingWithIncubation = totalBreedingTime + incubationTime;
+            return allIncubationWithBreeding > allBreedingWithIncubation
+                ? allIncubationWithBreeding
+                : allBreedingWithIncubation;
         }
 
         private TimeSpan _selfBreedingEffort;
