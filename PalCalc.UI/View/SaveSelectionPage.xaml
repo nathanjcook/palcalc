@@ -294,6 +294,12 @@
                                 Visibility="{Binding SelectedCollection.RemoveSaveCommand, Converter={StaticResource VVC}, FallbackValue=Collapsed}"
                                 Content="{itl:LocalizedText LC_SAVE_GAME_REMOVE_BTN_LABEL}" />
 
+                        <Button Command="{Binding SelectedSave.RefreshCommand}"
+                                Visibility="{Binding SelectedSave.RefreshCommand, Converter={StaticResource VVC}, FallbackValue=Collapsed}"
+                                ToolTipService.ToolTip="Re-pull the save from the server">
+                            <materialIcons:MaterialIcon Kind="Refresh" Foreground="SkyBlue" Width="18" />
+                        </Button>
+
                         <Button Command="{Binding SelectedSave.OpenFolderCommand}"
                                 Visibility="{Binding SelectedSave.OpenFolderCommand, Converter={StaticResource VVC}, FallbackValue=Collapsed}"
                                 ToolTipService.ToolTip="{itl:LocalizedText LC_OPEN_IN_FILE_EXPLORER}">

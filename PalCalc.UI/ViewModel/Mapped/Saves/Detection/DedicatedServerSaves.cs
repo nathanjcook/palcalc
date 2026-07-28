@@ -27,13 +27,13 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
 
         public static SavesCollectionViewModel CollectAll(AppSettings settings, ISavesService savesService)
         {
-            var loaded = new List<StandardSaveGame>();
+            var loaded = new List<(RemoteSaveConnection conn, StandardSaveGame save)>();
             foreach (var conn in settings.RemoteSaveLocations)
             {
                 try
                 {
                     var dir = RemoteSaveFetcher.Fetch(conn);
-                    loaded.Add(new StandardSaveGame(dir));
+                    loaded.Add((conn, new StandardSaveGame(dir)));
                 }
                 catch (Exception e)
                 {
@@ -45,15 +45,30 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
             return FromList(settings, loaded, savesService);
         }
 
-        public static SaveGameViewModel FromSave(SavesCollectionViewModel parent, StandardSaveGame save)
+        public static SaveGameViewModel FromSave(SavesCollectionViewModel parent, RemoteSaveConnection conn, StandardSaveGame save)
         {
             // BuildNormalSave already renders the server-save label (world name + day).
             var res = SavesCommon.BuildNormalSave(parent, save, openFolderCommand: null);
             res.Type = SaveType.DedicatedServer;
+
+            // Re-pull from the server on demand. The download trips StandardSaveGame's
+            // FileSystemWatcher, which surfaces the normal "save changed — reload?" flow.
+            res.RefreshCommand = new AsyncRelayCommand(async () =>
+            {
+                try
+                {
+                    await RemoteSaveFetcher.FetchAsync(conn);
+                }
+                catch (Exception ex)
+                {
+                    AdonisMessageBox.Show(App.Current.MainWindow, "Failed to re-pull the save:\n\n" + ex.Message, caption: "");
+                }
+            });
+
             return res;
         }
 
-        public static SavesCollectionViewModel FromList(AppSettings settings, IEnumerable<StandardSaveGame> existingSaves, ISavesService savesService)
+        public static SavesCollectionViewModel FromList(AppSettings settings, IEnumerable<(RemoteSaveConnection conn, StandardSaveGame save)> existingSaves, ISavesService savesService)
         {
             var res = new SavesCollectionViewModel()
             {
@@ -64,7 +79,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
             };
 
             var availableSaves = new ObservableCollection<SaveGameViewModel>([
-                .. existingSaves.Select(sg => FromSave(res, sg)).OrderBy(sg => sg.CombinedLabel.Value)
+                .. existingSaves.Select(e => FromSave(res, e.conn, e.save)).OrderBy(sg => sg.CombinedLabel.Value)
             ]);
             res.AvailableSaves = new(availableSaves);
 
@@ -148,7 +163,7 @@ namespace PalCalc.UI.ViewModel.Mapped.Saves.Detection
 
                 savesService.AddRemoteSave(conn);
 
-                var vm = FromSave(res, save);
+                var vm = FromSave(res, conn, save);
                 var orderedIndex = availableSaves
                     .AsEnumerable()
                     .Append(vm)
