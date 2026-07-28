@@ -36,7 +36,18 @@ namespace PalCalc.UI.ViewModel.Mapped
         }
 
         [JsonIgnore]
-        public GameSettings ModelObject => new GameSettings()
+        public GameSettings ModelObject
+        {
+            get
+            {
+                var res = BuildModelObject();
+                // deployed breeding-bonus Pals -> the (default-neutral) breeding multipliers
+                BasePalEffects.ApplyTo(res, ActiveBasePalSelections);
+                return res;
+            }
+        }
+
+        private GameSettings BuildModelObject() => new GameSettings()
         {
             BreedingTime = TimeSpan.FromSeconds(BreedingTimeSeconds),
             MassiveEggIncubationTime = TimeSpan.FromMinutes(MassiveEggIncubationTimeMinutes),
@@ -73,6 +84,40 @@ namespace PalCalc.UI.ViewModel.Mapped
 
         [ObservableProperty]
         private bool multipleBreedingFarms;
+
+        // Breeding-bonus Pals (issue #208): the Pal's star level while deployed, or NotDeployed.
+        // Kept as one property per Pal so the persisted settings stay flat like the rest of this
+        // view model; the effect data itself stays generic in BasePalEffects.
+        [ObservableProperty]
+        private int bralohaStarLevel = StarLevelOption.NotDeployed;
+
+        [ObservableProperty]
+        private int dynamoffStarLevel = StarLevelOption.NotDeployed;
+
+        [ObservableProperty]
+        private int grintaleStarLevel = StarLevelOption.NotDeployed;
+
+        private IEnumerable<BasePalSelection> ActiveBasePalSelections
+        {
+            get
+            {
+                if (BralohaStarLevel >= 0) yield return new BasePalSelection(BasePalEffects.Braloha, BralohaStarLevel);
+                if (DynamoffStarLevel >= 0) yield return new BasePalSelection(BasePalEffects.Dynamoff, DynamoffStarLevel);
+                if (GrintaleStarLevel >= 0) yield return new BasePalSelection(BasePalEffects.Grintale, GrintaleStarLevel);
+            }
+        }
+
+        [JsonIgnore]
+        public BasePalEffect BralohaEffect => BasePalEffects.Braloha;
+
+        [JsonIgnore]
+        public BasePalEffect DynamoffEffect => BasePalEffects.Dynamoff;
+
+        [JsonIgnore]
+        public BasePalEffect GrintaleEffect => BasePalEffects.Grintale;
+
+        [JsonIgnore]
+        public List<StarLevelOption> StarLevelOptions => StarLevelOption.All;
 
         private int palboxTabWidth;
         public int PalboxTabWidth

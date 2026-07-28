@@ -39,6 +39,9 @@ namespace PalCalc.UI.Model
         public int MaxGoldCost { get; set; } = 0;
         public bool UseGenderReversers { get; set; } = false;
 
+        // Breeding cake item key (e.g. "Cake05"); null = no cake. See PalCalc.Model.Cakes.
+        public string SelectedCakeItemKey { get; set; } = null;
+
         public List<string> BannedBredPalInternalNames { get; set; } = [];
         public List<string> BannedWildPalInternalNames { get; set; } = [
             "PlantSlime_Flower", // flower gumoss

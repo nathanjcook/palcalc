@@ -12,10 +12,10 @@
              mc:Ignorable="d" 
              d:DataContext="{x:Static vms:SolverControlsViewModel.DesignerInstance}"
              d:DesignWidth="1000.621">
-    <vu:SpacedWrapPanel Orientation="Horizontal" HorizontalSpacing="25" VerticalSpacing="15" HorizontalContentAlignment="{Binding RelativeSource={RelativeSource AncestorType=local:SolverControlsView}, Path=HorizontalContentAlignment}">
+    <vu:SpacedWrapPanel Orientation="Horizontal" HorizontalSpacing="40" VerticalSpacing="24" HorizontalContentAlignment="{Binding RelativeSource={RelativeSource AncestorType=local:SolverControlsView}, Path=HorizontalContentAlignment}">
         <vu:SpacedWrapPanel.Resources>
-            <GridLength x:Key="SepHeight">5</GridLength>
-            <GridLength x:Key="SepWidth">10</GridLength>
+            <GridLength x:Key="SepHeight">8</GridLength>
+            <GridLength x:Key="SepWidth">14</GridLength>
 
             <Style TargetType="{x:Type vu:IntegerTextBox}">
                 <Setter Property="Width" Value="25" />
@@ -74,6 +74,29 @@
                     Command="{Binding ChangeSurgeryPassives}"
                     IsEnabled="{Binding CanEditSettings}"
                     Content="{itl:LocalizedText Code=LC_SOLVER_SETTINGS_SURGERY_ALLOWED_PASSIVES}"
+            />
+        </Grid>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource SepWidth}" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Breeding Cake" />
+            <ComboBox
+                Grid.Row="0" Grid.Column="2"
+                ItemsSource="{Binding CakeOptions}"
+                SelectedItem="{Binding SelectedCake, Mode=TwoWay}"
+                DisplayMemberPath="Label"
+                IsEnabled="{Binding CanEditSettings}"
+                ToolTipService.ToolTip="Cake fed to the parents for every breeding step. Affects eggs per breed and how many passives are inherited directly."
+                ToolTipService.ShowOnDisabled="True"
+                MinWidth="150"
             />
         </Grid>
 

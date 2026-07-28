@@ -6,6 +6,7 @@ using PalCalc.Solver.ResultPruning;
 using PalCalc.UI.Localization;
 using PalCalc.UI.Model;
 using PalCalc.UI.View;
+using PalCalc.UI.ViewModel.Mapped;
 using PalCalc.UI.ViewModel.Presets;
 using System;
 using System.Collections.Generic;
@@ -267,6 +268,12 @@ namespace PalCalc.UI.ViewModel.Solver
         [ObservableProperty]
         private List<PassiveSkill> bannedSurgeryPassives = new List<PassiveSkill>();
 
+        // Breeding cake used for every breeding step (issue #208). Defaults to the plain Cake.
+        public List<CakeViewModel> CakeOptions => CakeViewModel.Options;
+
+        [ObservableProperty]
+        private CakeViewModel selectedCake = CakeViewModel.Default;
+
         public BreedingSolver ConfiguredSolver(GameSettings gameSettings, List<PalInstance> pals) => new BreedingSolver(
             new BreedingSolverSettings(
                 db: PalDB.LoadEmbedded(),
@@ -287,6 +294,9 @@ namespace PalCalc.UI.ViewModel.Solver
                 allowedSurgeryPassives: PalDB.LoadEmbedded().SurgeryPassiveSkills.Except(BannedSurgeryPassives).ToList(),
                 useGenderReversers: UseGenderReversers
             )
+            {
+                SelectedCake = SelectedCake?.Value,
+            }
         );
 
         public SerializableSolverSettings AsModel => new SerializableSolverSettings()
@@ -302,6 +312,7 @@ namespace PalCalc.UI.ViewModel.Solver
             BannedSurgeryPassiveInternalNames = BannedSurgeryPassives.Select(p => p.InternalName).ToList(),
             MaxGoldCost = MaxGoldCost,
             UseGenderReversers = UseGenderReversers,
+            SelectedCakeItemKey = SelectedCake?.Value?.ItemKey,
         };
 
         public void CopyFrom(SerializableSolverSettings model)
@@ -314,6 +325,7 @@ namespace PalCalc.UI.ViewModel.Solver
             MaxThreads = model.MaxThreads;
             MaxGoldCost = model.MaxGoldCost;
             UseGenderReversers = model.UseGenderReversers;
+            SelectedCake = CakeViewModel.FromItemKey(model.SelectedCakeItemKey);
 
             BannedBredPals = model.BannedBredPals(PalDB.LoadEmbedded());
             BannedWildPals = model.BannedWildPals(PalDB.LoadEmbedded());
