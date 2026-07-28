@@ -80,7 +80,7 @@ namespace PalCalc.Model
                 _ => throw new NotImplementedException(),
             };
 
-            return settings.MassiveEggIncubationTime / modifier;
+            return settings.MassiveEggIncubationTime / modifier * settings.IncubationTimeMultiplier;
         }
     }
 }

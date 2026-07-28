@@ -20,8 +20,22 @@ namespace PalCalc.Model
         // half the time of each day and the number of total eggs produced is cut in half
         //
         // (i.e., average effective breeding time is doubled)
+        // Global egg-production speed bonus from a base Pal's partner skill (e.g. Braloha's "Balmy
+        // Weather"). Non-stacking, so this holds the single best active bonus as a time multiplier
+        // (<1 = faster); 1.0 = none. Fed from the base-pal registry.
+        public float BreedingTimeMultiplier { get; set; } = 1.0f;
+
+        // Global egg-hatching speed bonus from a base Pal's partner skill (e.g. Dynamoff). Same
+        // convention as BreedingTimeMultiplier.
+        public float IncubationTimeMultiplier { get; set; } = 1.0f;
+
+        // Expected eggs per egg-pickup from a party Pal's partner skill (e.g. Grintale's "Glaring
+        // Cat's Eye", which gives a chance of a bonus egg -> expected yield 1 + chance). >=1; 1.0 =
+        // none. Multiplies breeding-cake BreedCount to set the effective eggs per breeding action.
+        public float EggYieldMultiplier { get; set; } = 1.0f;
+
         [JsonIgnore]
-        public TimeSpan AvgBreedingTime => BreedingTime * 2;
+        public TimeSpan AvgBreedingTime => BreedingTime * 2 * BreedingTimeMultiplier;
 
         public bool MultipleBreedingFarms { get; set; } = true;
 

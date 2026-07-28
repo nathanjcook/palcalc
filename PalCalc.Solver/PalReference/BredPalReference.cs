@@ -115,18 +115,23 @@ namespace PalCalc.Solver.PalReference
                 var timePerBreed = gameSettings.AvgBreedingTime * Parent1.TimeFactor * Parent2.TimeFactor;
                 var incubationTime = Pal.EggSize.IncubationTime(gameSettings);
 
+                // Cake BreedCount (guaranteed eggs/breed) combines with a party pal's expected egg
+                // yield (e.g. Grintale) to give the effective eggs per breeding action.
+                var eggsPerBreedingAction = breedCount * gameSettings.EggYieldMultiplier;
+
                 SelfBreedingEffort = ComputeSelfBreedingEffort(
-                    _avgRequiredBreedings, breedCount, timePerBreed, incubationTime, gameSettings.MultipleIncubators);
+                    _avgRequiredBreedings, eggsPerBreedingAction, timePerBreed, incubationTime, gameSettings.MultipleIncubators);
             }
         }
 
-        // Effort (time) to breed + hatch `avgRequiredBreedings` eggs. A breeding cake's BreedCount
-        // (eggs per breeding action) reduces the number of breeding *actions* needed to produce the
-        // eggs, but every egg is still incubated. Pure/static for testability.
+        // Effort (time) to breed + hatch `avgRequiredBreedings` eggs. `eggsPerBreedingAction` (from
+        // cake BreedCount and/or a party egg-yield pal like Grintale) reduces the number of breeding
+        // *actions* needed to produce the eggs, but every egg is still incubated. Pure/static for
+        // testability.
         public static TimeSpan ComputeSelfBreedingEffort(
-            int avgRequiredBreedings, int breedCount, TimeSpan timePerBreed, TimeSpan incubationTime, bool multipleIncubators)
+            int avgRequiredBreedings, float eggsPerBreedingAction, TimeSpan timePerBreed, TimeSpan incubationTime, bool multipleIncubators)
         {
-            var numBreedActions = (int)Math.Ceiling(avgRequiredBreedings / (double)Math.Max(1, breedCount));
+            var numBreedActions = (int)Math.Ceiling(avgRequiredBreedings / (double)Math.Max(1f, eggsPerBreedingAction));
             var totalBreedingTime = numBreedActions * timePerBreed;
             var totalIncubationTime = avgRequiredBreedings * incubationTime;
 

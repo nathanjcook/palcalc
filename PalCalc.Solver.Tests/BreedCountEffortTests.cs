@@ -39,6 +39,14 @@ namespace PalCalc.Solver.Tests
         }
 
         [TestMethod]
+        public void FractionalEggYield_ReducesActions()
+        {
+            // Grintale at 4★ -> expected 1.75 eggs per pickup. 10 eggs -> ceil(10/1.75) = 6 actions.
+            var effort = BredPalReference.ComputeSelfBreedingEffort(10, 1.75f, PerBreed, Incubation, multipleIncubators: true);
+            Assert.AreEqual(6 * PerBreed + Incubation, effort);
+        }
+
+        [TestMethod]
         public void IncubationDominated_BreedCountBarelyMoves()
         {
             // Without multiple incubators and incubation >> breeding, effort is incubation-bound and
